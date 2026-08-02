@@ -44,9 +44,6 @@ public class SecurityConf {
             auth ->
                 auth.requestMatchers("/register", "/login", "/ping")
                     .permitAll()
-
-                    // Catalog: public read, MANAGER-only write. Order matters: GET matchers must be
-                    // declared before the catch-all PUT/anyRequest rules below.
                     .requestMatchers(GET, "/movies", "/movies/**")
                     .permitAll()
                     .requestMatchers(GET, "/rooms", "/rooms/**")
