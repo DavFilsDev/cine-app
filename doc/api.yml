@@ -3,18 +3,15 @@ info:
   title: cine-app API
   version: v0
   description: >
-    Cinema reservation management API. Endpoints marked as "PROPOSAL" in their
-    description were not explicitly defined in the initial specification and must
-    be validated by the team before implementation.
+    Cinema reservation management API.
 servers:
   - url: http://localhost:8080
     description: Local server
 
 paths:
-  # ---------- AUTH ----------
   /register:
     post:
-      tags: [auth-controller]
+      tags: [auth]
       operationId: register
       description: Public registration. The assigned role is always CLIENT.
       requestBody:
@@ -33,7 +30,7 @@ paths:
 
   /login:
     post:
-      tags: [auth-controller]
+      tags: [auth]
       operationId: login
       requestBody:
         required: true
@@ -53,7 +50,7 @@ paths:
 
   /movies:
     get:
-      tags: [movie-controller]
+      tags: [movie]
       operationId: getAllMovies
       description: "PROPOSAL: Public read access. Not explicitly listed in the original specification, but required to display the movie catalog."
       responses:
@@ -66,7 +63,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Movie'
     put:
-      tags: [movie-controller]
+      tags: [movie]
       operationId: crupdateMovie
       description: Create or update a movie. Restricted to MANAGER.
       requestBody:
@@ -87,7 +84,7 @@ paths:
 
   /movies/{movieId}:
     get:
-      tags: [movie-controller]
+      tags: [movie]
       operationId: getMovieById
       description: "PROPOSAL: Public read access."
       parameters:
@@ -108,7 +105,7 @@ paths:
 
   /rooms:
     get:
-      tags: [room-controller]
+      tags: [room]
       operationId: getAllRooms
       description: "PROPOSAL: Public read access (useful for displaying the seating layout)."
       responses:
@@ -121,7 +118,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Room'
     put:
-      tags: [room-controller]
+      tags: [room]
       operationId: crupdateRoom
       description: "PROPOSAL (symmetric to /movies): Create or update a room. Restricted to MANAGER."
       requestBody:
@@ -142,7 +139,7 @@ paths:
 
   /rooms/{roomId}/seats:
     get:
-      tags: [seat-controller]
+      tags: [seat]
       operationId: getSeatsByRoom
       description: "PROPOSAL: Public access to the seats of a room."
       parameters:
@@ -161,7 +158,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Seat'
     put:
-      tags: [seat-controller]
+      tags: [seat]
       operationId: crupdateSeat
       description: "PROPOSAL: Create or update a seat in a room. Restricted to MANAGER."
       parameters:
@@ -188,7 +185,7 @@ paths:
 
   /projections:
     get:
-      tags: [projection-controller]
+      tags: [projection]
       operationId: getAllProjections
       description: Public read access, available to everyone (including anonymous users).
       responses:
@@ -203,7 +200,7 @@ paths:
 
   /projection:
     put:
-      tags: [projection-controller]
+      tags: [projection]
       operationId: crupdateProjection
       description: Create or update a projection. Restricted to MANAGER.
       requestBody:
@@ -224,7 +221,7 @@ paths:
 
   /reservations:
     get:
-      tags: [reservation-controller]
+      tags: [reservation]
       operationId: getAllReservations
       description: List all reservations. Restricted to EMPLOYEE and MANAGER.
       responses:
@@ -241,7 +238,7 @@ paths:
 
   /reservation:
     put:
-      tags: [reservation-controller]
+      tags: [reservation]
       operationId: crupdateReservation
       description: >
         Create or update a reservation on behalf of another user. Restricted to
@@ -266,7 +263,7 @@ paths:
 
   /reservations/{reservationId}:
     get:
-      tags: [reservation-controller]
+      tags: [reservation]
       operationId: getReservationById
       description: >
         Returns 200 if the authenticated CLIENT owns the reservation, or 403 if the
@@ -293,7 +290,7 @@ paths:
 
   /users/{uid}/reservations:
     get:
-      tags: [user-reservation-controller]
+      tags: [user-reservation]
       operationId: getOwnReservations
       description: "PROPOSAL (following the /users/{uid}/todos pattern from TodoIt): A CLIENT can list their own reservations, while EMPLOYEE and MANAGER can access the reservations of any user."
       parameters:
@@ -314,7 +311,7 @@ paths:
         '403':
           description: Forbidden (another CLIENT's uid)
     put:
-      tags: [user-reservation-controller]
+      tags: [user-reservation]
       operationId: crupdateOwnReservation
       description: "PROPOSAL: A CLIENT reserves a seat for themselves (the userId is forced to the uid from the path)."
       parameters:
@@ -341,7 +338,7 @@ paths:
 
   /ping:
     get:
-      tags: [ping-controller]
+      tags: [ping]
       operationId: ping
       responses:
         '200':
