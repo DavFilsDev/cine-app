@@ -1,0 +1,487 @@
+openapi: 3.0.1
+info:
+  title: cine-app API
+  version: v0
+  description: >
+    Cinema reservation management API.
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
+paths:
+  /register:
+    post:
+      tags: [auth]
+      operationId: register
+      description: Public registration. The assigned role is always CLIENT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPayload'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithToken'
+
+  /login:
+    post:
+      tags: [auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginPayload'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithToken'
+        '401':
+          description: Unauthorized
+
+  /movies:
+    get:
+      tags: [movie]
+      operationId: getAllMovies
+      description: "PROPOSAL: Public read access. Not explicitly listed in the original specification, but required to display the movie catalog."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+    put:
+      tags: [movie]
+      operationId: crupdateMovie
+      description: Create or update a movie. Restricted to MANAGER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Movie'
+      responses:
+        '200':
+          description: OK (MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '403':
+          description: Forbidden (CLIENT, EMPLOYEE)
+
+  /movies/{movieId}:
+    get:
+      tags: [movie]
+      operationId: getMovieById
+      description: "PROPOSAL: Public read access."
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          description: Not found
+
+  /rooms:
+    get:
+      tags: [room]
+      operationId: getAllRooms
+      description: "PROPOSAL: Public read access (useful for displaying the seating layout)."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+    put:
+      tags: [room]
+      operationId: crupdateRoom
+      description: "PROPOSAL (symmetric to /movies): Create or update a room. Restricted to MANAGER."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Room'
+      responses:
+        '200':
+          description: OK (MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '403':
+          description: Forbidden (CLIENT, EMPLOYEE)
+
+  /rooms/{roomId}/seats:
+    get:
+      tags: [seat]
+      operationId: getSeatsByRoom
+      description: "PROPOSAL: Public access to the seats of a room."
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Seat'
+    put:
+      tags: [seat]
+      operationId: crupdateSeat
+      description: "PROPOSAL: Create or update a seat in a room. Restricted to MANAGER."
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Seat'
+      responses:
+        '200':
+          description: OK (MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Seat'
+        '403':
+          description: Forbidden (CLIENT, EMPLOYEE)
+
+  /projections:
+    get:
+      tags: [projection]
+      operationId: getAllProjections
+      description: Public read access, available to everyone (including anonymous users).
+      responses:
+        '200':
+          description: OK (everyone)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Projection'
+
+  /projection:
+    put:
+      tags: [projection]
+      operationId: crupdateProjection
+      description: Create or update a projection. Restricted to MANAGER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projection'
+      responses:
+        '200':
+          description: OK (MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projection'
+        '403':
+          description: Forbidden (CLIENT, EMPLOYEE)
+
+  /reservations:
+    get:
+      tags: [reservation]
+      operationId: getAllReservations
+      description: List all reservations. Restricted to EMPLOYEE and MANAGER.
+      responses:
+        '200':
+          description: OK (EMPLOYEE, MANAGER)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+        '403':
+          description: Forbidden (CLIENT)
+
+  /reservation:
+    put:
+      tags: [reservation]
+      operationId: crupdateReservation
+      description: >
+        Create or update a reservation on behalf of another user. Restricted to
+        EMPLOYEE and MANAGER (e.g. reservations made at the ticket office).
+        CLIENT users must use PUT /users/{uid}/reservations to make reservations
+        for themselves.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reservation'
+      responses:
+        '200':
+          description: OK (EMPLOYEE, MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '403':
+          description: Forbidden (CLIENT)
+
+  /reservations/{reservationId}:
+    get:
+      tags: [reservation]
+      operationId: getReservationById
+      description: >
+        Returns 200 if the authenticated CLIENT owns the reservation, or 403 if the
+        reservation belongs to another CLIENT. EMPLOYEE and MANAGER always receive
+        200. Ownership verification must be performed in the service layer (not only
+        through role-based access control).
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK (owner CLIENT, or EMPLOYEE/MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '403':
+          description: Forbidden (another CLIENT's reservation)
+        '404':
+          description: Not found
+
+  /users/{uid}/reservations:
+    get:
+      tags: [user-reservation]
+      operationId: getOwnReservations
+      description: "PROPOSAL (following the /users/{uid}/todos pattern from TodoIt): A CLIENT can list their own reservations, while EMPLOYEE and MANAGER can access the reservations of any user."
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK (self, or EMPLOYEE/MANAGER)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+        '403':
+          description: Forbidden (another CLIENT's uid)
+    put:
+      tags: [user-reservation]
+      operationId: crupdateOwnReservation
+      description: "PROPOSAL: A CLIENT reserves a seat for themselves (the userId is forced to the uid from the path)."
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reservation'
+      responses:
+        '200':
+          description: OK (self, or EMPLOYEE/MANAGER)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '403':
+          description: Forbidden (another CLIENT's uid)
+
+  /ping:
+    get:
+      tags: [ping]
+      operationId: ping
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Genre:
+      type: string
+      enum:
+        - THRILLER
+        - ROMANCE
+        - COMEDY
+        - DRAMA
+        - ACTION
+        - SCI_FI
+        - FANTASY
+        - ANIMATION
+
+    UserRole:
+      type: string
+      enum:
+        - CLIENT
+        - EMPLOYEE
+        - MANAGER
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: string
+        capacity:
+          type: integer
+
+    Seat:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: string
+        roomId:
+          type: string
+
+    Movie:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        genre:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+        description:
+          type: string
+        duration:
+          type: string
+          description: ISO-8601 duration (e.g. PT2H15M)
+
+    Projection:
+      type: object
+      properties:
+        id:
+          type: string
+        datetime:
+          type: string
+          format: date-time
+        seatPrice:
+          type: number
+          format: bigdecimal
+        movieId:
+          type: string
+        roomId:
+          type: string
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        projectionId:
+          type: string
+        seatId:
+          type: string
+        userId:
+          type: string
+
+    RegisterPayload:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        birthdate:
+          type: string
+          format: date
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+
+    LoginPayload:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    UserWithToken:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        firstName:
+          type: string
+        lastName:
+          type: string
+        birthdate:
+          type: string
+          format: date
+        email:
+          type: string
+        phone:
+          type: string
+        joinedAt:
+          type: string
+          format: date-time
+        token:
+          type: string
