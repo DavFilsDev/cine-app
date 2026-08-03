@@ -3,9 +3,9 @@ spring:
     name: cine-app
 
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    url: ${DB_URL:}
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
 
   jpa:
     hibernate:
@@ -18,3 +18,7 @@ spring:
 jwt:
   secret: ${JWT_SECRET:change-this-minimal-dev-secret-key-32bytes-min}
   expiration-ms: 3600000
+
+aws:
+  eventBridge:
+    bus: ${AWS_EVENT_BRIDGE_BUS:}

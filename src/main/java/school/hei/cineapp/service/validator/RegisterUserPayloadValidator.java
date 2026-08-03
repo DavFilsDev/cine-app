@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import school.hei.cineapp.model.RegisterPayload;
+import school.hei.cineapp.repository.JUserRepository;
 
 @Component
 @AllArgsConstructor

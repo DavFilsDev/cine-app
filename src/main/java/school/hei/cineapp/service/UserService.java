@@ -11,6 +11,8 @@ import school.hei.cineapp.model.LoginPayload;
 import school.hei.cineapp.model.RegisterPayload;
 import school.hei.cineapp.model.User;
 import school.hei.cineapp.model.UserWithToken;
+import school.hei.cineapp.repository.JUserRepository;
+import school.hei.cineapp.repository.mapper.JUserMapper;
 import school.hei.cineapp.security.jwt.JwtService;
 import school.hei.cineapp.security.model.Principal;
 import school.hei.cineapp.service.validator.LoginUserPayloadValidator;
