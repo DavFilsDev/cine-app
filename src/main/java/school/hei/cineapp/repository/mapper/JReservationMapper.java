@@ -6,29 +6,17 @@ import school.hei.cineapp.repository.model.JReservation;
 
 @Component
 public class JReservationMapper {
-
   public Reservation toDomain(JReservation entity) {
-    if (entity == null) {
-      return null;
-    }
     return new Reservation(
         entity.getId(),
+        entity.getCreatedAt(),
         entity.getProjectionId(),
         entity.getSeatId(),
-        entity.getUserId(),
-        entity.getCreatedAt());
+        entity.getUserId());
   }
 
   public JReservation toEntity(Reservation domain) {
-    if (domain == null) {
-      return null;
-    }
-    return JReservation.builder()
-        .id(domain.getId())
-        .projectionId(domain.getProjectionId())
-        .seatId(domain.getSeatId())
-        .userId(domain.getUserId())
-        .createdAt(domain.getCreatedAt())
-        .build();
+    return new JReservation(
+        domain.id(), domain.createdAt(), domain.projectionId(), domain.seatId(), domain.userId());
   }
 }
