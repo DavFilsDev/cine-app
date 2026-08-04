@@ -1,4 +1,4 @@
-package school.hei.cineapp;
+package school.hei.cineapp.it;
 
 import static java.math.BigDecimal.TEN;
 import static java.time.Instant.now;
@@ -43,262 +43,267 @@ import school.hei.cineapp.model.Seat;
 import school.hei.cineapp.model.UserWithToken;
 
 class ReservationRbacIT extends TestcontainersConfigurer {
-    @Autowired TestRestTemplate testRestTemplate;
+  @Autowired TestRestTemplate testRestTemplate;
 
-    private String managerToken;
-    private String employeeToken;
-    private UserWithToken clientA;
-    private UserWithToken clientB;
+  private String managerToken;
+  private String employeeToken;
+  private UserWithToken clientA;
+  private UserWithToken clientB;
 
-    @BeforeEach
-    void setUp() {
-        managerToken = utils.tokenOf(MANAGER_EMAIL);
-        employeeToken = utils.tokenOf(EMPLOYEE_EMAIL);
-        clientA = utils.login(CLIENT_A_EMAIL);
-        clientB = registerNewClient();
-    }
+  @BeforeEach
+  void setUp() {
+    managerToken = utils.tokenOf(MANAGER_EMAIL);
+    employeeToken = utils.tokenOf(EMPLOYEE_EMAIL);
+    clientA = utils.login(CLIENT_A_EMAIL);
+    clientB = registerNewClient();
+  }
 
-    @Test
-    void staff_only_can_list_all_reservations() {
-        var managerResponse =
-                testRestTemplate.exchange(
-                        RESERVATIONS_URL, GET, new HttpEntity<>(authHeaders(managerToken)), Reservation[].class);
-        assertEquals(OK, managerResponse.getStatusCode());
+  @Test
+  void staff_only_can_list_all_reservations() {
+    var managerResponse =
+        testRestTemplate.exchange(
+            RESERVATIONS_URL,
+            GET,
+            new HttpEntity<>(authHeaders(managerToken)),
+            Reservation[].class);
+    assertEquals(OK, managerResponse.getStatusCode());
 
-        var clientResponse =
-                testRestTemplate.exchange(
-                        RESERVATIONS_URL,
-                        GET,
-                        new HttpEntity<>(authHeaders(clientA.getToken())),
-                        Map.class);
-        assertEquals(FORBIDDEN, clientResponse.getStatusCode());
-    }
+    var clientResponse =
+        testRestTemplate.exchange(
+            RESERVATIONS_URL, GET, new HttpEntity<>(authHeaders(clientA.getToken())), Map.class);
+    assertEquals(FORBIDDEN, clientResponse.getStatusCode());
+  }
 
-    @Test
-    void staff_can_crupdate_a_reservation_but_client_cannot() {
-        var projection = createProjection();
-        var seat = createSeat(projection.roomId());
+  @Test
+  void staff_can_crupdate_a_reservation_but_client_cannot() {
+    var projection = createProjection();
+    var seat = createSeat(projection.roomId());
 
-        var toCreate = reservation(projection.id(), seat.id(), clientA.getId());
-        var staffResponse =
-                testRestTemplate.exchange(
-                        RESERVATION_URL,
-                        PUT,
-                        new HttpEntity<>(toCreate, authHeaders(managerToken)),
-                        Reservation.class);
-        assertEquals(OK, staffResponse.getStatusCode());
-        assertNotNull(staffResponse.getBody());
+    var toCreate = reservation(projection.id(), seat.id(), clientA.getId());
+    var staffResponse =
+        testRestTemplate.exchange(
+            RESERVATION_URL,
+            PUT,
+            new HttpEntity<>(toCreate, authHeaders(managerToken)),
+            Reservation.class);
+    assertEquals(OK, staffResponse.getStatusCode());
+    assertNotNull(staffResponse.getBody());
 
-        var anotherSeat = createSeat(projection.roomId());
-        var clientAttempt = reservation(projection.id(), anotherSeat.id(), clientA.getId());
-        var clientResponse =
-                testRestTemplate.exchange(
-                        RESERVATION_URL,
-                        PUT,
-                        new HttpEntity<>(clientAttempt, authHeaders(clientA.getToken())),
-                        Map.class);
-        assertEquals(FORBIDDEN, clientResponse.getStatusCode());
-    }
+    var anotherSeat = createSeat(projection.roomId());
+    var clientAttempt = reservation(projection.id(), anotherSeat.id(), clientA.getId());
+    var clientResponse =
+        testRestTemplate.exchange(
+            RESERVATION_URL,
+            PUT,
+            new HttpEntity<>(clientAttempt, authHeaders(clientA.getToken())),
+            Map.class);
+    assertEquals(FORBIDDEN, clientResponse.getStatusCode());
+  }
 
-    @Test
-    void owner_client_can_read_their_own_reservation() {
-        var reservation = createReservationForClientA();
+  @Test
+  void owner_client_can_read_their_own_reservation() {
+    var reservation = createReservationForClientA();
 
-        var response =
-                testRestTemplate.exchange(
-                        RESERVATION_BY_ID_URL,
-                        GET,
-                        new HttpEntity<>(authHeaders(clientA.getToken())),
-                        Reservation.class,
-                        reservation.id());
+    var response =
+        testRestTemplate.exchange(
+            RESERVATION_BY_ID_URL,
+            GET,
+            new HttpEntity<>(authHeaders(clientA.getToken())),
+            Reservation.class,
+            reservation.id());
 
-        assertEquals(OK, response.getStatusCode());
-    }
+    assertEquals(OK, response.getStatusCode());
+  }
 
-    @Test
-    void non_owner_client_cannot_read_someone_elses_reservation() {
-        var reservation = createReservationForClientA();
+  @Test
+  void non_owner_client_cannot_read_someone_elses_reservation() {
+    var reservation = createReservationForClientA();
 
-        var response =
-                testRestTemplate.exchange(
-                        RESERVATION_BY_ID_URL,
-                        GET,
-                        new HttpEntity<>(authHeaders(clientB.getToken())),
-                        Map.class,
-                        reservation.id());
+    var response =
+        testRestTemplate.exchange(
+            RESERVATION_BY_ID_URL,
+            GET,
+            new HttpEntity<>(authHeaders(clientB.getToken())),
+            Map.class,
+            reservation.id());
 
-        assertEquals(FORBIDDEN, response.getStatusCode());
-    }
+    assertEquals(FORBIDDEN, response.getStatusCode());
+  }
 
-    @Test
-    void staff_can_read_any_reservation() {
-        var reservation = createReservationForClientA();
+  @Test
+  void staff_can_read_any_reservation() {
+    var reservation = createReservationForClientA();
 
-        var response =
-                testRestTemplate.exchange(
-                        RESERVATION_BY_ID_URL,
-                        GET,
-                        new HttpEntity<>(authHeaders(employeeToken)),
-                        Reservation.class,
-                        reservation.id());
+    var response =
+        testRestTemplate.exchange(
+            RESERVATION_BY_ID_URL,
+            GET,
+            new HttpEntity<>(authHeaders(employeeToken)),
+            Reservation.class,
+            reservation.id());
 
-        assertEquals(OK, response.getStatusCode());
-    }
+    assertEquals(OK, response.getStatusCode());
+  }
 
-    @Test
-    void client_can_book_a_seat_for_themselves() {
-        var projection = createProjection();
-        var seat = createSeat(projection.roomId());
-        var toCreate = reservation(projection.id(), seat.id(), "irrelevant-should-be-overridden");
+  @Test
+  void client_can_book_a_seat_for_themselves() {
+    var projection = createProjection();
+    var seat = createSeat(projection.roomId());
+    var toCreate = reservation(projection.id(), seat.id(), "irrelevant-should-be-overridden");
 
-        var response =
-                testRestTemplate.exchange(
-                        USER_RESERVATIONS_URL,
-                        PUT,
-                        new HttpEntity<>(toCreate, authHeaders(clientA.getToken())),
-                        Reservation.class,
-                        clientA.getId());
+    var response =
+        testRestTemplate.exchange(
+            USER_RESERVATIONS_URL,
+            PUT,
+            new HttpEntity<>(toCreate, authHeaders(clientA.getToken())),
+            Reservation.class,
+            clientA.getId());
 
-        assertEquals(OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(clientA.getId(), response.getBody().userId());
-    }
+    assertEquals(OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertEquals(clientA.getId(), response.getBody().userId());
+  }
 
-    @Test
-    void client_cannot_book_a_seat_on_behalf_of_another_client() {
-        var projection = createProjection();
-        var seat = createSeat(projection.roomId());
-        var toCreate = reservation(projection.id(), seat.id(), clientB.getId());
+  @Test
+  void client_cannot_book_a_seat_on_behalf_of_another_client() {
+    var projection = createProjection();
+    var seat = createSeat(projection.roomId());
+    var toCreate = reservation(projection.id(), seat.id(), clientB.getId());
 
-        var response =
-                testRestTemplate.exchange(
-                        USER_RESERVATIONS_URL,
-                        PUT,
-                        new HttpEntity<>(toCreate, authHeaders(clientA.getToken())),
-                        Map.class,
-                        clientB.getId());
+    var response =
+        testRestTemplate.exchange(
+            USER_RESERVATIONS_URL,
+            PUT,
+            new HttpEntity<>(toCreate, authHeaders(clientA.getToken())),
+            Map.class,
+            clientB.getId());
 
-        assertEquals(FORBIDDEN, response.getStatusCode());
-    }
+    assertEquals(FORBIDDEN, response.getStatusCode());
+  }
 
-    @Test
-    void cannot_reserve_the_same_seat_twice_for_the_same_projection() {
-        var projection = createProjection();
-        var seat = createSeat(projection.roomId());
+  @Test
+  void cannot_reserve_the_same_seat_twice_for_the_same_projection() {
+    var projection = createProjection();
+    var seat = createSeat(projection.roomId());
 
-        var first = reservation(projection.id(), seat.id(), clientA.getId());
-        var firstResponse =
-                testRestTemplate.exchange(
-                        RESERVATION_URL,
-                        PUT,
-                        new HttpEntity<>(first, authHeaders(managerToken)),
-                        Reservation.class);
-        assertEquals(OK, firstResponse.getStatusCode());
+    var first = reservation(projection.id(), seat.id(), clientA.getId());
+    var firstResponse =
+        testRestTemplate.exchange(
+            RESERVATION_URL,
+            PUT,
+            new HttpEntity<>(first, authHeaders(managerToken)),
+            Reservation.class);
+    assertEquals(OK, firstResponse.getStatusCode());
 
-        var second = reservation(projection.id(), seat.id(), clientB.getId());
-        var secondResponse =
-                testRestTemplate.exchange(
-                        RESERVATION_URL,
-                        PUT,
-                        new HttpEntity<>(second, authHeaders(managerToken)),
-                        Map.class);
-        assertEquals(BAD_REQUEST, secondResponse.getStatusCode());
-    }
+    var second = reservation(projection.id(), seat.id(), clientB.getId());
+    var secondResponse =
+        testRestTemplate.exchange(
+            RESERVATION_URL, PUT, new HttpEntity<>(second, authHeaders(managerToken)), Map.class);
+    assertEquals(BAD_REQUEST, secondResponse.getStatusCode());
+  }
 
-    private Reservation createReservationForClientA() {
-        var projection = createProjection();
-        var seat = createSeat(projection.roomId());
-        var toCreate = reservation(projection.id(), seat.id(), clientA.getId());
+  private Reservation createReservationForClientA() {
+    var projection = createProjection();
+    var seat = createSeat(projection.roomId());
+    var toCreate = reservation(projection.id(), seat.id(), clientA.getId());
 
-        var response =
-                testRestTemplate.exchange(
-                        RESERVATION_URL,
-                        PUT,
-                        new HttpEntity<>(toCreate, authHeaders(managerToken)),
-                        Reservation.class);
-        return response.getBody();
-    }
+    var response =
+        testRestTemplate.exchange(
+            RESERVATION_URL,
+            PUT,
+            new HttpEntity<>(toCreate, authHeaders(managerToken)),
+            Reservation.class);
+    return response.getBody();
+  }
 
-    private static Reservation reservation(String projectionId, String seatId, String userId) {
-        return Reservation.builder()
-                .id(randomUUID().toString())
-                .createdAt(now())
-                .projectionId(projectionId)
-                .seatId(seatId)
-                .userId(userId)
-                .build();
-    }
+  private static Reservation reservation(String projectionId, String seatId, String userId) {
+    return Reservation.builder()
+        .id(randomUUID().toString())
+        .createdAt(now())
+        .projectionId(projectionId)
+        .seatId(seatId)
+        .userId(userId)
+        .build();
+  }
 
-    private Projection createProjection() {
-        var room = createRoom();
-        var movie = createMovie();
-        var toCreate =
-                Projection.builder()
-                        .id(randomUUID().toString())
-                        .datetime(now())
-                        .seatPrice(TEN)
-                        .movieId(movie.id())
-                        .roomId(room.id())
-                        .build();
+  private Projection createProjection() {
+    var room = createRoom();
+    var movie = createMovie();
+    var toCreate =
+        Projection.builder()
+            .id(randomUUID().toString())
+            .datetime(now())
+            .seatPrice(TEN)
+            .movieId(movie.id())
+            .roomId(room.id())
+            .build();
 
-        var response =
-                testRestTemplate.exchange(
-                        PROJECTION_URL,
-                        PUT,
-                        new HttpEntity<>(toCreate, authHeaders(managerToken)),
-                        Projection.class);
-        return response.getBody();
-    }
+    var response =
+        testRestTemplate.exchange(
+            PROJECTION_URL,
+            PUT,
+            new HttpEntity<>(toCreate, authHeaders(managerToken)),
+            Projection.class);
+    return response.getBody();
+  }
 
-    private Seat createSeat(String roomId) {
-        var toCreate = Seat.builder().id(randomUUID().toString()).number("S-" + randomUUID()).build();
+  private Seat createSeat(String roomId) {
+    var toCreate =
+        Seat.builder()
+            .id(randomUUID().toString())
+            .number("S-" + randomUUID().toString().substring(0, 6))
+            .build();
 
-        var response =
-                testRestTemplate.exchange(
-                        ROOM_SEATS_URL,
-                        PUT,
-                        new HttpEntity<>(toCreate, authHeaders(managerToken)),
-                        Seat.class,
-                        roomId);
-        return response.getBody();
-    }
+    var response =
+        testRestTemplate.exchange(
+            ROOM_SEATS_URL,
+            PUT,
+            new HttpEntity<>(toCreate, authHeaders(managerToken)),
+            Seat.class,
+            roomId);
+    return response.getBody();
+  }
 
-    private Room createRoom() {
-        var toCreate =
-                Room.builder().id(randomUUID().toString()).number("R-" + randomUUID()).capacity(80).build();
+  private Room createRoom() {
+    var toCreate =
+        Room.builder()
+            .id(randomUUID().toString())
+            .number("R-" + randomUUID().toString().substring(0, 6))
+            .capacity(80)
+            .build();
 
-        var response =
-                testRestTemplate.exchange(
-                        ROOMS_URL, PUT, new HttpEntity<>(toCreate, authHeaders(managerToken)), Room.class);
-        return response.getBody();
-    }
+    var response =
+        testRestTemplate.exchange(
+            ROOMS_URL, PUT, new HttpEntity<>(toCreate, authHeaders(managerToken)), Room.class);
+    return response.getBody();
+  }
 
-    private Movie createMovie() {
-        var toCreate =
-                Movie.builder()
-                        .id(randomUUID().toString())
-                        .title("Movie-" + randomUUID())
-                        .genre(of(Genre.ACTION))
-                        .description("Integration test fixture")
-                        .duration(Duration.ofMinutes(120))
-                        .build();
+  private Movie createMovie() {
+    var toCreate =
+        Movie.builder()
+            .id(randomUUID().toString())
+            .title("Movie-" + randomUUID())
+            .genre(of(Genre.ACTION))
+            .description("Integration test fixture")
+            .duration(Duration.ofMinutes(120))
+            .build();
 
-        var response =
-                testRestTemplate.exchange(
-                        MOVIES_URL, PUT, new HttpEntity<>(toCreate, authHeaders(managerToken)), Movie.class);
-        return response.getBody();
-    }
+    var response =
+        testRestTemplate.exchange(
+            MOVIES_URL, PUT, new HttpEntity<>(toCreate, authHeaders(managerToken)), Movie.class);
+    return response.getBody();
+  }
 
-    private UserWithToken registerNewClient() {
-        var payload =
-                new RegisterPayload(
-                        "Client",
-                        "B-" + randomUUID(),
-                        null,
-                        "client-b-" + randomUUID() + "@cine-app.test",
-                        "AdminPass123!",
-                        null);
+  private UserWithToken registerNewClient() {
+    var payload =
+        new RegisterPayload(
+            "Client",
+            "B-" + randomUUID(),
+            null,
+            "client-b-" + randomUUID() + "@cine-app.test",
+            "AdminPass123!",
+            null);
 
-        return testRestTemplate.postForObject(REGISTER_URL, payload, UserWithToken.class);
-    }
+    return testRestTemplate.postForObject(REGISTER_URL, payload, UserWithToken.class);
+  }
 }
