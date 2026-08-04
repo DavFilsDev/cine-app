@@ -28,6 +28,11 @@ public class TestUtils {
   public static final String PROJECTIONS_URL = "/projections";
   public static final String PROJECTION_URL = "/projection";
 
+  public static final String RESERVATIONS_URL = "/reservations";
+  public static final String RESERVATION_URL = "/reservation";
+  public static final String RESERVATION_BY_ID_URL = "/reservations/{reservationId}";
+  public static final String USER_RESERVATIONS_URL = "/users/{uid}/reservations";
+
   private final TestRestTemplate testRestTemplate;
 
   public UserWithToken login(String email) {
