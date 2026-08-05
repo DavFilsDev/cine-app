@@ -258,6 +258,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Reservation'
+        '400':
+          description: >
+            Bad request: projectionId, seatId or userId does not reference an
+            existing resource, or the seat is already reserved for this
+            projection (unique constraint on projectionId + seatId).
         '403':
           description: Forbidden (CLIENT)
 
@@ -313,7 +318,10 @@ paths:
     put:
       tags: [user-reservation]
       operationId: crupdateOwnReservation
-      description: "PROPOSAL: A CLIENT reserves a seat for themselves (the userId is forced to the uid from the path)."
+      description: >
+        PROPOSAL: A CLIENT reserves a seat for themselves. The userId is always
+        forced to the uid from the path, overriding any userId supplied in the
+        request body.
       parameters:
         - name: uid
           in: path
@@ -333,6 +341,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Reservation'
+        '400':
+          description: >
+            Bad request: projectionId or seatId does not reference an existing
+            resource, or the seat is already reserved for this projection
+            (unique constraint on projectionId + seatId).
         '403':
           description: Forbidden (another CLIENT's uid)
 
