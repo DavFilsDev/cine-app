@@ -3,6 +3,7 @@ package school.hei.cineapp.security;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+import static school.hei.cineapp.security.model.UserRole.EMPLOYEE;
 import static school.hei.cineapp.security.model.UserRole.MANAGER;
 
 import lombok.AllArgsConstructor;
@@ -34,7 +35,10 @@ public class SecurityConf {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http, BearerAuthFilter bearerAuthFilter)
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      BearerAuthFilter bearerAuthFilter,
+      SelfAuthorizationManager selfAuthorizationManager)
       throws Exception {
     return http.csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
@@ -58,14 +62,16 @@ public class SecurityConf {
                     .hasRole(MANAGER.role())
                     .requestMatchers(PUT, "/projection")
                     .hasRole(MANAGER.role())
-
-                    // TODO(reservations lot): add explicit matchers for /reservations, /reservation
-                    // and
-                    // /users/{uid}/reservations before this goes anywhere near a real deployment --
-                    // anyRequest() below is permissive on purpose only while that lot is
-                    // unfinished.
+                    .requestMatchers(GET, "/reservations")
+                    .hasAnyRole(EMPLOYEE.role(), MANAGER.role())
+                    .requestMatchers(PUT, "/reservation")
+                    .hasAnyRole(EMPLOYEE.role(), MANAGER.role())
+                    .requestMatchers(GET, "/reservations/*")
+                    .authenticated()
+                    .requestMatchers("/users/{uid}/reservations")
+                    .access(selfAuthorizationManager)
                     .anyRequest()
-                    .permitAll())
+                    .authenticated())
         .addFilterBefore(bearerAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }
