@@ -68,6 +68,8 @@ public class SecurityConf {
                     .hasAnyRole(EMPLOYEE.role(), MANAGER.role())
                     .requestMatchers(GET, "/reservations/*")
                     .authenticated()
+                    .requestMatchers(GET, "/reservations/*/ticket")
+                    .authenticated()
                     .requestMatchers("/users/{uid}/reservations")
                     .access(selfAuthorizationManager)
                     .anyRequest()
