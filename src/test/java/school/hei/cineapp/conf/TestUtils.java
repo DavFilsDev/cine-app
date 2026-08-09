@@ -33,6 +33,8 @@ public class TestUtils {
   public static final String RESERVATION_BY_ID_URL = "/reservations/{reservationId}";
   public static final String USER_RESERVATIONS_URL = "/users/{uid}/reservations";
 
+  public static final String RESERVATION_TICKET_URL = "/reservations/{reservationId}/ticket";
+
   private final TestRestTemplate testRestTemplate;
 
   public UserWithToken login(String email) {

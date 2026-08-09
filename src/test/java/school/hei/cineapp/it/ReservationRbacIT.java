@@ -6,6 +6,7 @@ import static java.util.List.of;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -19,6 +20,7 @@ import static school.hei.cineapp.conf.TestUtils.PROJECTION_URL;
 import static school.hei.cineapp.conf.TestUtils.REGISTER_URL;
 import static school.hei.cineapp.conf.TestUtils.RESERVATIONS_URL;
 import static school.hei.cineapp.conf.TestUtils.RESERVATION_BY_ID_URL;
+import static school.hei.cineapp.conf.TestUtils.RESERVATION_TICKET_URL;
 import static school.hei.cineapp.conf.TestUtils.RESERVATION_URL;
 import static school.hei.cineapp.conf.TestUtils.ROOMS_URL;
 import static school.hei.cineapp.conf.TestUtils.ROOM_SEATS_URL;
@@ -200,6 +202,42 @@ class ReservationRbacIT extends TestcontainersConfigurer {
         testRestTemplate.exchange(
             RESERVATION_URL, PUT, new HttpEntity<>(second, authHeaders(managerToken)), Map.class);
     assertEquals(BAD_REQUEST, secondResponse.getStatusCode());
+  }
+
+  @Test
+  void owner_client_can_download_their_own_ticket() {
+    var reservation = createReservationForClientA();
+
+    var response =
+        testRestTemplate.exchange(
+            RESERVATION_TICKET_URL,
+            GET,
+            new HttpEntity<>(authHeaders(clientA.getToken())),
+            byte[].class,
+            reservation.id());
+
+    assertEquals(OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertTrue(response.getBody().length > 0);
+
+    var contentDisposition = response.getHeaders().getFirst("Content-Disposition");
+    assertNotNull(contentDisposition);
+    assertTrue(contentDisposition.contains("ticket-reservation-" + reservation.id()));
+  }
+
+  @Test
+  void non_owner_client_cannot_download_someone_elses_ticket() {
+    var reservation = createReservationForClientA();
+
+    var response =
+        testRestTemplate.exchange(
+            RESERVATION_TICKET_URL,
+            GET,
+            new HttpEntity<>(authHeaders(clientB.getToken())),
+            Map.class,
+            reservation.id());
+
+    assertEquals(FORBIDDEN, response.getStatusCode());
   }
 
   private Reservation createReservationForClientA() {
