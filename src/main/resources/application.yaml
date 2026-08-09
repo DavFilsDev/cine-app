@@ -21,4 +21,4 @@ jwt:
 
 aws:
   eventBridge:
-    bus: ${AWS_EVENT_BRIDGE_BUS:}
+    bus: ${AWS_EVENT_BRIDGE_BUS}
